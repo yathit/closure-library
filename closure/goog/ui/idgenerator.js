@@ -44,5 +44,5 @@ goog.ui.IdGenerator.prototype.nextId_ = 0;
  * @return {string} The next unique identifier.
  */
 goog.ui.IdGenerator.prototype.getNextUniqueId = function() {
-  return ':' + (this.nextId_++).toString(36);
+  return 'y:' + (this.nextId_++).toString(36);
 };
