@@ -864,6 +864,7 @@ goog.async.Deferred.Error_.prototype.throwError = function() {
   goog.asserts.assert(goog.async.Deferred.errorMap_[this.id_],
       'Cannot throw an error that is not scheduled.');
   delete goog.async.Deferred.errorMap_[this.id_];
+  window.console.error(this.error_.stack);
   throw this.error_;
 };
 
