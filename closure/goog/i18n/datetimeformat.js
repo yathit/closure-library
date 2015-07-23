@@ -175,6 +175,10 @@ goog.i18n.DateTimeFormat.PartTypes_ = {
  * @private
  */
 goog.i18n.DateTimeFormat.prototype.applyPattern_ = function(pattern) {
+  if (goog.i18n.DateTimeFormat.removeRlmInPatterns_) {
+    // Remove RLM unicode control character from pattern.
+    pattern = pattern.replace(/\u200f/g, '');
+  }
   // lex the pattern, once for all uses
   while (pattern) {
     for (var i = 0; i < goog.i18n.DateTimeFormat.TOKENS_.length; ++i) {
@@ -199,7 +203,7 @@ goog.i18n.DateTimeFormat.prototype.applyPattern_ = function(pattern) {
 
 
 /**
- * Format the given date object according to preset pattern and current lcoale.
+ * Format the given date object according to preset pattern and current locale.
  * @param {goog.date.DateLike} date The Date object that is being formatted.
  * @param {goog.i18n.TimeZone=} opt_timeZone optional, if specified, time
  *    related fields will be formatted based on its setting. When this field
@@ -223,7 +227,7 @@ goog.i18n.DateTimeFormat.prototype.format = function(date, opt_timeZone) {
   // Thing get a little bit tricky when daylight time transition happens. For
   // example, suppose OS timeZone is America/Los_Angeles, it is impossible to
   // represent "2006/4/2 02:30" even for those timeZone that has no transition
-  // at this time. Because 2:00 to 3:00 on that day does not exising in
+  // at this time. Because 2:00 to 3:00 on that day does not exist in
   // America/Los_Angeles time zone. To avoid calculating date field through
   // our own code, we uses 3 Date object instead, one for "Year, month, day",
   // one for time within that day, and one for timeZone object since it need
@@ -232,10 +236,23 @@ goog.i18n.DateTimeFormat.prototype.format = function(date, opt_timeZone) {
       (date.getTimezoneOffset() - opt_timeZone.getOffset(date)) * 60000 : 0;
   var dateForDate = diff ? new Date(date.getTime() + diff) : date;
   var dateForTime = dateForDate;
-  // in daylight time switch on/off hour, diff adjustment could alter time
-  // because of timeZone offset change, move 1 day forward or backward.
+  // When the time manipulation applied above spans the DST on/off hour, this
+  // could alter the time incorrectly by adding or subtracting an additional
+  // hour.
+  // We can mitigate this by:
+  // - Adding the difference in timezone offset to the date. This ensures that
+  //   the dateForDate is still within the right day if the extra DST hour
+  //   affected the date.
+  // - Move the time one day forward if we applied a timezone offset backwards,
+  //   or vice versa. This trick ensures that the time is in the same offset
+  //   as the original date, so we remove the additional hour added or
+  //   subtracted by the DST switch.
   if (opt_timeZone &&
       dateForDate.getTimezoneOffset() != date.getTimezoneOffset()) {
+    var dstDiff = (dateForDate.getTimezoneOffset() - date.getTimezoneOffset()) *
+        60000;
+    dateForDate = new Date(dateForDate.getTime() + dstDiff);
+
     diff += diff > 0 ? -goog.date.MS_PER_DAY : goog.date.MS_PER_DAY;
     dateForTime = new Date(date.getTime() + diff);
   }
@@ -295,6 +312,58 @@ goog.i18n.DateTimeFormat.prototype.localizeNumbers_ = function(input) {
 
 
 /**
+ * If the usage of Ascii digits should be enforced regardless of locale.
+ * @type {boolean}
+ * @private
+ */
+goog.i18n.DateTimeFormat.enforceAsciiDigits_ = false;
+
+
+/**
+ * If RLM unicode characters should be removed from date/time patterns (useful
+ * when enforcing ASCII digits for Arabic). See {@code #setEnforceAsciiDigits}.
+ * @type {boolean}
+ * @private
+ */
+goog.i18n.DateTimeFormat.removeRlmInPatterns_ = false;
+
+
+/**
+ * Sets if the usage of Ascii digits in formatting should be enforced in
+ * formatted date/time even for locales where native digits are indicated.
+ * Also sets whether to remove RLM unicode control characters when using
+ * standard enumerated patterns (they exist e.g. in standard d/M/y for Arabic).
+ * Production code should call this once before any {@code DateTimeFormat}
+ * object is instantiated.
+ * Caveats:
+ *    * Enforcing ASCII digits affects all future formatting by new or existing
+ * {@code DateTimeFormat} objects.
+ *    * Removal of RLM characters only applies to {@code DateTimeFormat} objects
+ * instantiated after this call.
+ * @param {boolean} enforceAsciiDigits Whether Ascii digits should be enforced.
+ */
+goog.i18n.DateTimeFormat.setEnforceAsciiDigits = function(
+    enforceAsciiDigits) {
+  goog.i18n.DateTimeFormat.enforceAsciiDigits_ = enforceAsciiDigits;
+
+  // Also setting removal of RLM chracters when forcing ASCII digits since it's
+  // the right thing to do for Arabic standard patterns. One could add an
+  // optional argument here or to the {@code DateTimeFormat} constructor to
+  // enable an alternative behavior.
+  goog.i18n.DateTimeFormat.removeRlmInPatterns_ = enforceAsciiDigits;
+};
+
+
+/**
+ * @return {boolean} Whether enforcing ASCII digits for all locales. See
+ *     {@code #setEnforceAsciiDigits} for more details.
+ */
+goog.i18n.DateTimeFormat.isEnforceAsciiDigits = function() {
+  return goog.i18n.DateTimeFormat.enforceAsciiDigits_;
+};
+
+
+/**
  * Localizes a string potentially containing numbers, replacing ASCII digits
  * with native digits if specified so by the locale. Leaves other characters.
  * @param {number|string} input the string to be localized, using ASCII digits.
@@ -306,7 +375,8 @@ goog.i18n.DateTimeFormat.localizeNumbers =
     function(input, opt_dateTimeSymbols) {
   input = String(input);
   var dateTimeSymbols = opt_dateTimeSymbols || goog.i18n.DateTimeSymbols;
-  if (dateTimeSymbols.ZERODIGIT === undefined) {
+  if (dateTimeSymbols.ZERODIGIT === undefined ||
+      goog.i18n.DateTimeFormat.enforceAsciiDigits_) {
     return input;
   }
 

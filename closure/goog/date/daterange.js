@@ -16,6 +16,7 @@
  * @fileoverview Date range data structure. Based loosely on
  * com.google.common.util.DateRange.
  *
+ * @author dpb@google.com (David P. Baker)
  */
 
 goog.provide('goog.date.DateRange');
@@ -32,6 +33,7 @@ goog.require('goog.iter.StopIteration');
 /**
  * Constructs a date range.
  * @constructor
+ * @struct
  * @param {goog.date.Date} startDate The first date in the range.
  * @param {goog.date.Date} endDate The last date in the range.
  * @final
@@ -393,6 +395,8 @@ goog.date.DateRange.cloneOrCreate_ = function(opt_today) {
 /**
  * Creates an iterator over the dates in a {@link goog.date.DateRange}.
  * @constructor
+ * @struct
+ * @suppress {checkStructDictInheritance}
  * @extends {goog.iter.Iterator}
  * @param {goog.date.DateRange} dateRange The date range to iterate.
  * @final
