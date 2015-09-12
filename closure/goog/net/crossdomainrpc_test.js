@@ -18,10 +18,14 @@ goog.setTestOnly('goog.net.CrossDomainRpcTest');
 goog.require('goog.Promise');
 goog.require('goog.log');
 goog.require('goog.net.CrossDomainRpc');
+goog.require('goog.testing.TestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent');
 goog.require('goog.userAgent.product');
 
+function setUpPage() {
+  goog.testing.TestCase.getActiveTestCase().promiseTimeout = 10000; // 10s
+}
 
 function print(o) {
   if (Object.prototype.toSource) {
@@ -79,8 +83,8 @@ function testErrorRequest() {
         'http://hoodjimcwaadji.google.com/index.html',
         resolve, 'POST', {xyz: '01234567891123456789'});
     setTimeout(function() {
-      reject('CrossDomainRpc.send did not complete within 2000ms');
-    }, 2000);
+      reject('CrossDomainRpc.send did not complete within 4000ms');
+    }, 4000);
   }).then(function(e) {
     if (e.target.status < 300) {
       fail('should have failed requesting a non-existent URI');

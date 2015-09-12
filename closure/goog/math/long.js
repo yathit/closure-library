@@ -380,7 +380,10 @@ goog.math.Long.prototype.toString = function(opt_radix) {
   var result = '';
   while (true) {
     var remDiv = rem.div(radixToPower);
-    var intval = rem.subtract(remDiv.multiply(radixToPower)).toInt();
+    // The right shifting fixes negative values in the case when
+    // intval >= 2^31; for more details see
+    // https://github.com/google/closure-library/pull/498
+    var intval = rem.subtract(remDiv.multiply(radixToPower)).toInt() >>> 0;
     var digits = intval.toString(radix);
 
     rem = remDiv;
@@ -826,6 +829,7 @@ goog.math.Long.prototype.shiftLeft = function(numBits) {
 
 /**
  * Returns this Long with bits shifted to the right by the given amount.
+ * The new leading bits match the current sign bit.
  * @param {number} numBits The number of bits by which to shift.
  * @return {!goog.math.Long} This shifted to the right by the given amount.
  */

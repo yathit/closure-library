@@ -56,6 +56,7 @@ goog.events.KeyCodes = {
   UP: 38,          // also NUM_NORTH
   RIGHT: 39,       // also NUM_EAST
   DOWN: 40,        // also NUM_SOUTH
+  PLUS_SIGN: 43,   // NOT numpad plus
   PRINT_SCREEN: 44,
   INSERT: 45,      // also NUM_INSERT
   DELETE: 46,      // also NUM_DELETE
@@ -73,6 +74,7 @@ goog.events.KeyCodes = {
   FF_EQUALS: 61, // Firefox (Gecko) fires this for equals instead of 187
   FF_DASH: 173, // Firefox (Gecko) fires this for dash instead of 189
   QUESTION_MARK: 63, // needs localization
+  AT_SIGN: 64,
   A: 65,
   B: 66,
   C: 67,
@@ -344,7 +346,9 @@ goog.events.KeyCodes.isCharacterKey = function(keyCode) {
 
   switch (keyCode) {
     case goog.events.KeyCodes.SPACE:
+    case goog.events.KeyCodes.PLUS_SIGN:
     case goog.events.KeyCodes.QUESTION_MARK:
+    case goog.events.KeyCodes.AT_SIGN:
     case goog.events.KeyCodes.NUM_PLUS:
     case goog.events.KeyCodes.NUM_MINUS:
     case goog.events.KeyCodes.NUM_PERIOD:
