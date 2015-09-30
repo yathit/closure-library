@@ -403,7 +403,7 @@ goog.module.getInternal_ = function(name) {
 
 
 /**
- * @private {?{moduleName: (string|undefined)}}
+ * @private {?{moduleName: (string|undefined), declareLegacyNamespace:boolean}}
  */
 goog.moduleLoaderState_ = null;
 
@@ -1047,7 +1047,10 @@ if (goog.DEPENDENCIES_ENABLED) {
     // of the module.
     var previousState = goog.moduleLoaderState_;
     try {
-      goog.moduleLoaderState_ = {moduleName: undefined};
+      goog.moduleLoaderState_ = {
+        moduleName: undefined,
+        declareLegacyNamespace: false
+      };
       var exports;
       if (goog.isFunction(moduleDef)) {
         exports = moduleDef.call(goog.global, {});
@@ -1982,7 +1985,7 @@ goog.cssNameMappingStyle_;
  *     var x = goog.getCssName('foo');
  *     var y = goog.getCssName(this.baseClass, 'active');
  *  becomes:
- *     var x= 'foo';
+ *     var x = 'foo';
  *     var y = this.baseClass + '-active';
  *
  * If one argument is passed it will be processed, if two are passed only the
@@ -2180,8 +2183,8 @@ goog.exportProperty = function(object, publicName, symbol) {
  * child.foo(); // This works.
  * </pre>
  *
- * @param {Function} childCtor Child class.
- * @param {Function} parentCtor Parent class.
+ * @param {!Function} childCtor Child class.
+ * @param {!Function} parentCtor Parent class.
  */
 goog.inherits = function(childCtor, parentCtor) {
   /** @constructor */
