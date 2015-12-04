@@ -55,6 +55,8 @@ goog.require('goog.structs.Map');
  * @param {number=} opt_maxCount Max. number of objects (Default: 10).
  * @param {number=} opt_timeoutInterval Timeout (in ms) before aborting an
  *     attempt (Default: 0ms).
+ * @param {boolean=} opt_withCredentials Add credentials to every request
+ *     (Default: false).
  * @constructor
  * @extends {goog.events.EventTarget}
  */
@@ -63,7 +65,8 @@ goog.net.XhrManager = function(
     opt_headers,
     opt_minCount,
     opt_maxCount,
-    opt_timeoutInterval) {
+    opt_timeoutInterval,
+    opt_withCredentials) {
   goog.net.XhrManager.base(this, 'constructor');
 
   /**
@@ -87,7 +90,7 @@ goog.net.XhrManager = function(
    * @private
    */
   this.xhrPool_ = new goog.net.XhrIoPool(
-      opt_headers, opt_minCount, opt_maxCount);
+      opt_headers, opt_minCount, opt_maxCount, opt_withCredentials);
 
   /**
    * Map of ID's to requests.
@@ -184,7 +187,8 @@ goog.net.XhrManager.prototype.getOutstandingRequestIds = function() {
  *     should be retried.
  * @param {goog.net.XhrIo.ResponseType=} opt_responseType The response type of
  *     this request; defaults to goog.net.XhrIo.ResponseType.DEFAULT.
- * @param {boolean=} opt_withCredentials
+ * @param {boolean=} opt_withCredentials Add credentials to this request,
+ *     default: false.
  * @return {!goog.net.XhrManager.Request} The queued request object.
  */
 goog.net.XhrManager.prototype.send = function(
@@ -275,12 +279,10 @@ goog.net.XhrManager.prototype.handleAvailableXhr_ = function(id, xhrIo) {
     // Set properties for the XhrIo.
     xhrIo.setTimeoutInterval(this.timeoutInterval_);
     xhrIo.setResponseType(request.getResponseType());
+    xhrIo.setWithCredentials(request.getWithCredentials());
 
     // Add a reference to the XhrIo object to the request.
     request.xhrIo = xhrIo;
-
-    /** ydn Hack */
-    request.xhrIo.setWithCredentials(request.withCredentials_);
 
     // Notify the listeners.
     this.dispatchEvent(new goog.net.XhrManager.Event(
@@ -549,7 +551,8 @@ goog.inherits(goog.net.XhrManager.Event, goog.events.Event);
  *     should be retried (Default: 1).
  * @param {goog.net.XhrIo.ResponseType=} opt_responseType The response type of
  *     this request; defaults to goog.net.XhrIo.ResponseType.DEFAULT.
- * @param {boolean=} opt_withCredentials
+ * @param {boolean=} opt_withCredentials Add credentials to this request,
+ *     default: false.
  *
  * @constructor
  * @final
@@ -557,14 +560,6 @@ goog.inherits(goog.net.XhrManager.Event, goog.events.Event);
 goog.net.XhrManager.Request = function(url, xhrEventCallback, opt_method,
                                        opt_content, opt_headers, opt_callback, opt_maxRetries, opt_responseType,
                                        opt_withCredentials) {
-
-  /**
-   * ydn Hack
-   * @private
-   * @type {boolean}
-   */
-  this.withCredentials_ = !!opt_withCredentials;
-
   /**
    * Uri to make the request too.
    * @type {string}
@@ -643,6 +638,12 @@ goog.net.XhrManager.Request = function(url, xhrEventCallback, opt_method,
   this.responseType_ = opt_responseType || goog.net.XhrIo.ResponseType.DEFAULT;
 
   /**
+   * Send credentials with this request, or not.
+   * @private {boolean}
+   */
+  this.withCredentials_ = !!opt_withCredentials;
+
+  /**
    * The XhrIo instance handling this request. Set in handleAvailableXhr.
    * @type {goog.net.XhrIo}
    */
@@ -685,6 +686,15 @@ goog.net.XhrManager.Request.prototype.getContent = function() {
  */
 goog.net.XhrManager.Request.prototype.getHeaders = function() {
   return this.headers_;
+};
+
+
+/**
+ * Gets the withCredentials flag.
+ * @return {boolean} Add credentials, or not.
+ */
+goog.net.XhrManager.Request.prototype.getWithCredentials = function() {
+  return this.withCredentials_;
 };
 
 
